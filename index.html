@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>KrishiGPT: farming advice in your language</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500&display=swap" rel="stylesheet">
+<script type="importmap">{"imports":{"lenis":"https://unpkg.com/lenis@1.3.19/dist/lenis.mjs"}}</script>
+<style>
+:root{--hero-base:#04050c;--heading:#eef0f6;--body-muted:#b9becf;--on-media:#fff;--action-inverse:#fff;--action-inverse-fg:#2f2f33;--glass-fill:rgba(255,255,255,.08);--glass-border:rgba(255,255,255,.16);--scrim:rgba(4,5,12,.46);--scrim-strong:rgba(4,5,12,.68);--scrim-soft:rgba(4,5,12,.12);--fast:150ms;--ease:cubic-bezier(.2,0,0,1)}
+*{margin:0;box-sizing:border-box}
+html{font-size:16px}
+@media(max-width:1920px){html{font-size:.833333vw}}
+@media(max-width:1440px){html{font-size:1.111111vw}}
+@media(max-width:1024px){html{font-size:1.5625vw}}
+@media(max-width:640px){html{font-size:4.444444vw}}
+a{color:inherit;text-decoration:none}
+button,input{font:inherit;color:inherit;border:0;background:none}
+button{cursor:pointer}
+body{font-family:"Onest",sans-serif;background:var(--hero-base);color:var(--heading);overflow-x:hidden}
+:focus-visible{outline:2px solid rgba(255,255,255,.7);outline-offset:2px}
+
+.hero{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100lvh;width:100vw;overflow:hidden;background:var(--hero-base);text-align:center;padding:0 1.25rem}
+canvas{position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+.scrim{position:absolute;inset:0;z-index:1;pointer-events:none;background:radial-gradient(115% 95% at 50% 46%,var(--scrim-strong) 0%,var(--scrim-strong) 24%,var(--scrim) 52%,var(--scrim-soft) 100%)}
+
+header{position:absolute;inset-inline:0;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;padding:1.25rem}
+.brand{display:flex;align-items:center;gap:.6rem;font-weight:500;font-size:1.15rem;color:var(--on-media);letter-spacing:-.01em}
+.brand svg{width:1.35rem;height:1.35rem;stroke:currentColor}
+.links{display:none;position:absolute;left:50%;transform:translateX(-50%);height:3rem;align-items:center;gap:2.25rem;border-radius:9999px;border:1px solid var(--glass-border);background:var(--glass-fill);padding:0 1.75rem;backdrop-filter:blur(12px)}
+.links button{font-size:.95rem;color:var(--body-muted);white-space:nowrap;transition:color var(--fast) var(--ease)}
+.links button:hover{color:var(--heading)}
+.pill{display:inline-flex;align-items:center;justify-content:center;height:2.5rem;border-radius:9999px;background:var(--action-inverse);padding:0 1.125rem;font-size:.85rem;font-weight:500;color:var(--action-inverse-fg);box-shadow:0 1px 2px rgba(0,0,0,.05);transition:background var(--fast) var(--ease)}
+.pill:hover{background:rgba(255,255,255,.85)}
+.pill:focus-visible{outline:none;box-shadow:0 0 0 2px rgba(255,255,255,.7)}
+
+.col{position:relative;z-index:10;display:flex;flex-direction:column;align-items:center;width:100%;max-width:22rem}
+.copy{display:flex;flex-direction:column;align-items:center;width:100%}
+.badge{display:inline-flex;align-items:center;border-radius:9999px;border:1px solid var(--glass-border);background:var(--glass-fill);padding:.4rem .875rem;font-size:.72rem;color:var(--body-muted);backdrop-filter:blur(12px)}
+h1{margin-top:1.25rem;max-width:20rem;font-size:2rem;font-weight:500;line-height:1.1;letter-spacing:-.02em;color:var(--heading)}
+.sub{margin-top:1rem;max-width:20rem;font-size:1rem;line-height:1.5;color:var(--body-muted)}
+.w{display:inline-block;opacity:0;transform:translateY(var(--wy));transition:opacity var(--wd) cubic-bezier(.215,.61,.355,1),transform var(--wd) cubic-bezier(.215,.61,.355,1);transition-delay:var(--dl)}
+.go .w{opacity:1;transform:none}
+.rv{opacity:0;transform:translateY(var(--y,1.25rem));transition:opacity .7s var(--ease),transform .7s var(--ease)}
+.rv.in{opacity:1;transform:none}
+
+form{margin-top:1.75rem;width:37rem;max-width:100%}
+.bar{display:flex;align-items:center;height:3.5rem;border-radius:9999px;border:1px solid var(--glass-border);background:var(--glass-fill);backdrop-filter:blur(12px);box-shadow:0 1px 2px rgba(0,0,0,.05);padding-left:1.25rem;padding-right:.35rem}
+.bar input{flex:1;min-width:0;height:100%;font-size:.95rem;outline:none}
+.bar input::placeholder{color:var(--body-muted)}
+.bar .pill{flex:none}
+.chips{display:flex;flex-wrap:wrap;justify-content:center;gap:.5rem;margin-top:1.25rem;max-width:37rem}
+.chips button{border-radius:9999px;border:1px solid var(--glass-border);background:var(--glass-fill);padding:.4rem .875rem;font-size:.75rem;color:var(--body-muted);backdrop-filter:blur(12px);transition:color var(--fast) var(--ease)}
+.chips button:hover{color:var(--heading)}
+
+.chat{display:none;flex-direction:column;gap:.75rem;width:100%;max-width:44rem;height:min(56vh,36rem);overflow-y:auto;padding:5rem .25rem .5rem;text-align:left;scrollbar-width:none}
+.chat::-webkit-scrollbar{display:none}
+.chatting .chat{display:flex}
+.chatting .copy,.chatting .chips{display:none}
+.chatting form{width:44rem;margin-top:.75rem}
+.m{max-width:88%;padding:.7rem 1rem;border-radius:1.25rem;border:1px solid var(--glass-border);font-size:.95rem;line-height:1.55;backdrop-filter:blur(12px);animation:pop .4s var(--ease)}
+.m.u{align-self:flex-end;background:rgba(255,255,255,.16)}
+.m.a{align-self:flex-start;background:rgba(4,5,12,.55)}
+.t{display:inline-block;margin:.6rem .4rem 0 0;border-radius:9999px;border:1px solid var(--glass-border);padding:.15rem .6rem;font-size:.72rem;color:var(--body-muted)}
+.dots span{display:inline-block;width:.4rem;height:.4rem;margin-right:.3rem;border-radius:50%;background:var(--body-muted);animation:blink 1s infinite}
+.dots span:nth-child(2){animation-delay:.15s}.dots span:nth-child(3){animation-delay:.3s}
+@keyframes blink{0%,80%,100%{opacity:.3}40%{opacity:1}}
+@keyframes pop{from{opacity:0;transform:translateY(.5rem)}}
+
+footer{position:absolute;inset-inline:0;bottom:0;z-index:20;display:flex;justify-content:center;padding:1.25rem;font-size:.72rem;color:var(--body-muted)}
+
+@media(min-width:640px){
+.hero{padding:0 2.5rem}
+header{padding:1.75rem 2.5rem}
+.brand{font-size:1.375rem}.brand svg{width:1.5rem;height:1.5rem}
+.links{display:flex}
+.pill{height:2.75rem;padding:0 1.375rem;font-size:.95rem}
+.col{max-width:40rem}
+.badge{font-size:.8rem}
+h1{margin-top:1.75rem;max-width:34rem;font-size:3.5rem}
+.sub{margin-top:1.25rem;max-width:34rem;font-size:1.1rem}
+form{margin-top:2.5rem}
+.bar{height:4rem;padding-left:1.5rem;padding-right:.4rem}
+.bar input{font-size:1.15rem}
+.m{font-size:1.05rem}
+footer{padding:1.5rem 2.5rem;font-size:.8rem}
+}
+@media(min-width:1024px){.col{max-width:52rem}h1{max-width:46rem;font-size:5rem}.sub{max-width:none;font-size:1.2rem}}
+@media(prefers-reduced-motion:reduce){.w,.rv{transition:none}.m{animation:none}}
+</style>
+</head>
+<body>
+<section class="hero">
+  <canvas aria-hidden="true"></canvas>
+  <div class="scrim" aria-hidden="true"></div>
+
+  <header class="rv" data-d="150" style="--y:-.75rem">
+    <a class="brand" href="/">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M2.5 9c2.5 0 2.5 4.2 5 4.2S10 9 12 9s2.5 4.2 5 4.2S19.5 9 21.5 9" stroke-width="1.8" stroke-linecap="round"/><path d="M2.5 15c2.5 0 2.5 4.2 5 4.2S10 15 12 15s2.5 4.2 5 4.2S19.5 15 21.5 15" stroke-width="1.8" stroke-linecap="round" opacity=".5"/></svg>
+      KrishiGPT
+    </a>
+    <nav class="links">
+      <button data-q="Pune mein aaj ka mausam kaisa hai?">Weather</button>
+      <button data-q="Kharif mein kaali zameen aur kam paani hai, kya lagayein?">Crop advice</button>
+      <button data-q="माझ्याकडे काळी जमीन आहे, पाणी कमी आहे, खरिपात काय लावू?">मराठी</button>
+    </nav>
+    <button class="pill" id="start">Start chatting</button>
+  </header>
+
+  <main class="col">
+    <div class="copy">
+      <p class="badge rv" data-d="320">Hindi, मराठी and English</p>
+      <h1 id="h1">Smarter farming, in your own language</h1>
+      <p class="sub" id="sub">Live weather and crop advice for Indian farmers. Just ask.</p>
+    </div>
+    <div class="chat" id="chat" aria-live="polite"></div>
+    <form class="rv" data-d="1450" id="form">
+      <div class="bar">
+        <input id="q" type="text" required autocomplete="off" placeholder="Ask about weather or crops" aria-label="Your question">
+        <button class="pill" type="submit">Ask</button>
+      </div>
+    </form>
+    <div class="chips rv" data-d="1550">
+      <button data-q="Should I spray tomorrow in Baramati?">Should I spray tomorrow?</button>
+      <button data-q="Rabi mein kam paani mein kaunsi fasal lagayein? Mitti kali hai.">Rabi crop, low water</button>
+      <button data-q="Pune mein aaj ka mausam kaisa hai?">आज का मौसम</button>
+    </div>
+  </main>
+
+  <footer class="rv" data-d="1650">© 2026 KrishiGPT. Farming advice for every farmer.</footer>
+</section>
+
+<script>
+(() => {
+  const $ = s => document.querySelector(s);
+
+  // ---- word-by-word reveals + staged entrance ----
+  const split = (el, y, dur, base, step) => {
+    const ws = el.textContent.trim().split(/\s+/);
+    el.setAttribute('aria-label', ws.join(' '));
+    el.textContent = '';
+    ws.forEach((w, i) => {
+      const s = document.createElement('span');
+      s.className = 'w';
+      s.setAttribute('aria-hidden', 'true');
+      s.style.cssText = `--wy:${y}px;--wd:${dur}ms;--dl:${base + i * step}ms`;
+      s.textContent = w;
+      el.append(s, ' ');
+    });
+  };
+  split($('#h1'), 26, 720, 480, 85);
+  split($('#sub'), 14, 600, 1150, 22);
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    document.body.classList.add('go');
+    document.querySelectorAll('.rv').forEach(e => setTimeout(() => e.classList.add('in'), +e.dataset.d));
+  }));
+
+  // ---- chat ----
+  const log = $('#chat'), input = $('#q'), body = document.body;
+  const sid = crypto.randomUUID ? crypto.randomUUID() : String(Math.random()).slice(2);
+  const esc = s => s.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+  const md = s => esc(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/^[-*] /gm, '• ').replace(/\n/g, '<br>');
+  const label = { get_weather: '🌦 Weather', get_crop_advice: '🌱 Crop advice' };
+  const add = (cls, html) => {
+    const d = document.createElement('div');
+    d.className = 'm ' + cls; d.innerHTML = html;
+    log.append(d); log.scrollTop = log.scrollHeight; return d;
+  };
+  let busy = false;
+  async function ask(q) {
+    q = q.trim();
+    if (!q || busy) return;
+    busy = true; body.classList.add('chatting');
+    add('u', esc(q)); input.value = '';
+    const w = add('a', '<span class="dots"><span></span><span></span><span></span></span>');
+    try {
+      const r = await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ session: sid, message: q }) });
+      const j = await r.json();
+      w.innerHTML = md(j.reply || j.error || 'Something went wrong. Try again.') +
+        (j.tools || []).map(t => `<span class="t">${label[t] || esc(t)}</span>`).join('');
+    } catch (e) {
+      w.textContent = 'Could not reach the server. Check that it is still running.';
+    }
+    busy = false; log.scrollTop = log.scrollHeight; input.focus();
+  }
+  $('#form').addEventListener('submit', e => { e.preventDefault(); ask(input.value); });
+  document.querySelectorAll('[data-q]').forEach(b => b.addEventListener('click', () => ask(b.dataset.q)));
+  $('#start').addEventListener('click', () => {
+    body.classList.add('chatting');
+    if (!log.children.length) add('a', 'नमस्कार! 🌾 Ask me about the weather or what to sow, in Hindi, Marathi or English.');
+    input.focus();
+  });
+
+  // ---- WebGL fluid ink (condensed from Pavel Dobryakov's MIT fluid simulation) ----
+  function fluid(canvas) {
+    const O = { alpha: true, depth: false, stencil: false, antialias: false, preserveDrawingBuffer: false };
+    let gl = canvas.getContext('webgl2', O); const g2 = !!gl;
+    if (!g2) gl = canvas.getContext('webgl', O) || canvas.getContext('experimental-webgl', O);
+    if (!gl) return;
+    let hf, lin = true;
+    if (g2) gl.getExtension('EXT_color_buffer_float');
+    else {
+      hf = gl.getExtension('OES_texture_half_float'); if (!hf) return;
+      lin = !!gl.getExtension('OES_texture_half_float_linear'); gl.getExtension('EXT_color_buffer_half_float');
+    }
+    const HT = g2 ? gl.HALF_FLOAT : hf.HALF_FLOAT_OES, FL = lin ? gl.LINEAR : gl.NEAREST;
+    const SHADE = lin && !/Mobi|Android/i.test(navigator.userAgent);
+    canvas.width = canvas.clientWidth; canvas.height = canvas.clientHeight;
+
+    const ok = (i, f) => {
+      const t = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, t);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+      gl.texImage2D(gl.TEXTURE_2D, 0, i, 4, 4, 0, f, HT, null);
+      const b = gl.createFramebuffer(); gl.bindFramebuffer(gl.FRAMEBUFFER, b);
+      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, t, 0);
+      return gl.checkFramebufferStatus(gl.FRAMEBUFFER) === gl.FRAMEBUFFER_COMPLETE;
+    };
+    const fm = (i, f) => ok(i, f) ? { i, f } : i === gl.R16F ? fm(gl.RG16F, gl.RG) : i === gl.RG16F ? fm(gl.RGBA16F, gl.RGBA) : null;
+    const RGBA = g2 ? fm(gl.RGBA16F, gl.RGBA) : { i: gl.RGBA, f: gl.RGBA };
+    if (!RGBA) return;
+    const RG = g2 ? fm(gl.RG16F, gl.RG) : RGBA, R = g2 ? fm(gl.R16F, gl.RED) : RGBA;
+
+    const sh = (t, s) => { const o = gl.createShader(t); gl.shaderSource(o, s); gl.compileShader(o); return o; };
+    const VS = sh(gl.VERTEX_SHADER, 'precision highp float;attribute vec2 p;varying vec2 u,l,r,t,b;uniform vec2 ts;void main(){u=p*.5+.5;l=u-vec2(ts.x,0.);r=u+vec2(ts.x,0.);t=u+vec2(0.,ts.y);b=u-vec2(0.,ts.y);gl_Position=vec4(p,0.,1.);}');
+    const prog = fs => {
+      const p = gl.createProgram(); gl.attachShader(p, VS);
+      gl.attachShader(p, sh(gl.FRAGMENT_SHADER, 'precision highp float;precision highp sampler2D;varying vec2 u,l,r,t,b;' + fs));
+      gl.bindAttribLocation(p, 0, 'p'); gl.linkProgram(p);
+      const U = {};
+      for (let i = gl.getProgramParameter(p, gl.ACTIVE_UNIFORMS); i--;) { const n = gl.getActiveUniform(p, i).name; U[n] = gl.getUniformLocation(p, n); }
+      return { p, U };
+    };
+    const use = q => gl.useProgram(q.p), A = (q, n, v) => gl.uniform1i(q.U[n], v), F = (q, n, ...v) => gl['uniform' + v.length + 'f'](q.U[n], ...v);
+
+    const pclr = prog('uniform sampler2D S;uniform float v;void main(){gl_FragColor=v*texture2D(S,u);}');
+    const pcol = prog('uniform vec4 c;void main(){gl_FragColor=c;}');
+    const pdis = prog('uniform sampler2D S;uniform vec2 ts;uniform float sh;void main(){vec3 L=texture2D(S,l).rgb,R=texture2D(S,r).rgb,T=texture2D(S,t).rgb,B=texture2D(S,b).rgb,C=texture2D(S,u).rgb;vec3 n=normalize(vec3(length(R)-length(L),length(T)-length(B),length(ts)));C*=mix(1.,clamp(dot(n,vec3(0.,0.,1.))+.7,.7,1.),sh);gl_FragColor=vec4(C,max(C.r,max(C.g,C.b)));}');
+    const pspl = prog('uniform sampler2D S;uniform float ar,rad;uniform vec3 c;uniform vec2 pt;void main(){vec2 q=u-pt;q.x*=ar;gl_FragColor=vec4(texture2D(S,u).xyz+exp(-dot(q,q)/rad)*c,1.);}');
+    const padv = prog('uniform sampler2D V,X;uniform vec2 ts;uniform float dt,dis;void main(){vec2 co=u-dt*texture2D(V,u).xy*ts;gl_FragColor=dis*texture2D(X,co);gl_FragColor.a=1.;}');
+    const pdiv = prog('uniform sampler2D V;void main(){float L=texture2D(V,l).x,R=texture2D(V,r).x,T=texture2D(V,t).y,B=texture2D(V,b).y;vec2 C=texture2D(V,u).xy;if(l.x<0.)L=-C.x;if(r.x>1.)R=-C.x;if(t.y>1.)T=-C.y;if(b.y<0.)B=-C.y;gl_FragColor=vec4(.5*(R-L+T-B),0.,0.,1.);}');
+    const pcrl = prog('uniform sampler2D V;void main(){float L=texture2D(V,l).y,R=texture2D(V,r).y,T=texture2D(V,t).x,B=texture2D(V,b).x;gl_FragColor=vec4(.5*(R-L-T+B),0.,0.,1.);}');
+    const pvor = prog('uniform sampler2D V,K;uniform float cu,dt;void main(){float L=texture2D(K,l).x,R=texture2D(K,r).x,T=texture2D(K,t).x,B=texture2D(K,b).x,C=texture2D(K,u).x;vec2 f=.5*vec2(abs(T)-abs(B),abs(R)-abs(L));f/=length(f)+.0001;f*=cu*C;f.y*=-1.;gl_FragColor=vec4(texture2D(V,u).xy+f*dt,0.,1.);}');
+    const ppre = prog('uniform sampler2D P,D;void main(){gl_FragColor=vec4((texture2D(P,l).x+texture2D(P,r).x+texture2D(P,b).x+texture2D(P,t).x-texture2D(D,u).x)*.25,0.,0.,1.);}');
+    const pgra = prog('uniform sampler2D P,V;void main(){float L=texture2D(P,l).x,R=texture2D(P,r).x,T=texture2D(P,t).x,B=texture2D(P,b).x;gl_FragColor=vec4(texture2D(V,u).xy-vec2(R-L,T-B),0.,1.);}');
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer()); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, -1, 1, 1, 1, 1, -1]), gl.STATIC_DRAW);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, gl.createBuffer()); gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array([0, 1, 2, 0, 2, 3]), gl.STATIC_DRAW);
+    gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0); gl.enableVertexAttribArray(0);
+    const blit = d => { gl.bindFramebuffer(gl.FRAMEBUFFER, d); gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0); };
+
+    const fbo = (w, h, X, fl) => {
+      gl.activeTexture(gl.TEXTURE0);
+      const tx = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, tx);
+      [[gl.TEXTURE_MIN_FILTER, fl], [gl.TEXTURE_MAG_FILTER, fl], [gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE], [gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE]].forEach(a => gl.texParameteri(gl.TEXTURE_2D, a[0], a[1]));
+      gl.texImage2D(gl.TEXTURE_2D, 0, X.i, w, h, 0, X.f, HT, null);
+      const f = gl.createFramebuffer(); gl.bindFramebuffer(gl.FRAMEBUFFER, f);
+      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tx, 0);
+      gl.viewport(0, 0, w, h); gl.clear(gl.COLOR_BUFFER_BIT);
+      return { f, at(i) { gl.activeTexture(gl.TEXTURE0 + i); gl.bindTexture(gl.TEXTURE_2D, tx); return i; } };
+    };
+    const dbl = (w, h, X, fl) => { let a = fbo(w, h, X, fl), b = fbo(w, h, X, fl); return { get r() { return a; }, get w() { return b; }, sw() { [a, b] = [b, a]; } }; };
+    const res = n => { let a = canvas.width / canvas.height; if (a < 1) a = 1 / a; const mx = Math.round(n * a), mn = Math.round(n); return canvas.width > canvas.height ? { w: mx, h: mn } : { w: mn, h: mx }; };
+
+    let SW, SH, DW, DH, dye, vel, div, crl, prs;
+    const init = () => {
+      const s = res(200), d = res(512); SW = s.w; SH = s.h; DW = d.w; DH = d.h;
+      dye = dbl(DW, DH, RGBA, FL); vel = dbl(SW, SH, RG, FL);
+      div = fbo(SW, SH, R, gl.NEAREST); crl = fbo(SW, SH, R, gl.NEAREST); prs = dbl(SW, SH, R, gl.NEAREST);
+    };
+
+    function step(dt) {
+      gl.disable(gl.BLEND); gl.viewport(0, 0, SW, SH);
+      use(pcrl); F(pcrl, 'ts', 1 / SW, 1 / SH); A(pcrl, 'V', vel.r.at(0)); blit(crl.f);
+      use(pvor); F(pvor, 'ts', 1 / SW, 1 / SH); A(pvor, 'V', vel.r.at(0)); A(pvor, 'K', crl.at(1)); F(pvor, 'cu', 42); F(pvor, 'dt', dt); blit(vel.w.f); vel.sw();
+      use(pdiv); F(pdiv, 'ts', 1 / SW, 1 / SH); A(pdiv, 'V', vel.r.at(0)); blit(div.f);
+      use(pclr); A(pclr, 'S', prs.r.at(0)); F(pclr, 'v', .8); blit(prs.w.f); prs.sw();
+      use(ppre); F(ppre, 'ts', 1 / SW, 1 / SH); A(ppre, 'D', div.at(0));
+      for (let i = 0; i < 20; i++) { A(ppre, 'P', prs.r.at(1)); blit(prs.w.f); prs.sw(); }
+      use(pgra); F(pgra, 'ts', 1 / SW, 1 / SH); A(pgra, 'P', prs.r.at(0)); A(pgra, 'V', vel.r.at(1)); blit(vel.w.f); vel.sw();
+      use(padv); F(padv, 'ts', 1 / SW, 1 / SH); const id = vel.r.at(0); A(padv, 'V', id); A(padv, 'X', id); F(padv, 'dt', dt); F(padv, 'dis', .96); blit(vel.w.f); vel.sw();
+      gl.viewport(0, 0, DW, DH); A(padv, 'V', vel.r.at(0)); A(padv, 'X', dye.r.at(1)); F(padv, 'dis', .958); blit(dye.w.f); dye.sw();
+    }
+    function render() {
+      gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA); gl.enable(gl.BLEND);
+      gl.viewport(0, 0, canvas.width, canvas.height);
+      use(pcol); F(pcol, 'c', 4 / 255, 5 / 255, 12 / 255, 1); blit(null);
+      use(pdis); F(pdis, 'ts', 1 / canvas.width, 1 / canvas.height); F(pdis, 'sh', SHADE ? 1 : 0); A(pdis, 'S', dye.r.at(0)); blit(null);
+    }
+    function splat(x, y, dx, dy, c) {
+      gl.viewport(0, 0, SW, SH); use(pspl);
+      A(pspl, 'S', vel.r.at(0)); F(pspl, 'ar', canvas.width / canvas.height); F(pspl, 'pt', x / canvas.width, 1 - y / canvas.height); F(pspl, 'c', dx, -dy, 1); F(pspl, 'rad', .0022);
+      blit(vel.w.f); vel.sw();
+      gl.viewport(0, 0, DW, DH); A(pspl, 'S', dye.r.at(0)); F(pspl, 'c', c.r, c.g, c.b); blit(dye.w.f); dye.sw();
+    }
+
+    // electric cyan -> blue -> violet -> magenta ink
+    const hsv = (h, s, v) => {
+      const i = Math.floor(h * 6), f = h * 6 - i, p = v * (1 - s), q = v * (1 - f * s), t = v * (1 - (1 - f) * s);
+      return [{ r: v, g: t, b: p }, { r: q, g: v, b: p }, { r: p, g: v, b: t }, { r: p, g: q, b: v }, { r: t, g: p, b: v }, { r: v, g: p, b: q }][i % 6];
+    };
+    const gen = () => { const c = hsv(.5 + Math.random() * .42, .95, 1); return { r: c.r * .92, g: c.g * .92, b: c.b * .92 }; };
+    const burst = n => {
+      for (let i = 0; i < n; i++) {
+        const c = gen(); c.r *= 10; c.g *= 10; c.b *= 10;
+        splat(canvas.width * Math.random(), canvas.height * Math.random(), 1000 * (Math.random() - .5), 1000 * (Math.random() - .5), c);
+      }
+    };
+
+    init(); burst(34);
+    const stack = []; for (let i = 0; i < 8; i++) stack.push(10 + Math.floor(Math.random() * 10));
+
+    // invisible auto-cursor orbiting the centre forever
+    const t0 = Date.now(); let ang = 0, px = 0, py = 0, seeded = false, vc = null, vct = 0;
+    function orbit() {
+      if (Date.now() - t0 < 700) return;
+      const cx = canvas.width / 2, cy = canvas.height / 2, base = Math.min(300, canvas.width * .35, canvas.height * .35), r = base * (.72 + .28 * Math.sin(ang * .37));
+      ang += .026;
+      const x = cx + Math.cos(ang) * r, y = cy + Math.sin(ang) * r;
+      if (!seeded) { seeded = true; px = x; py = y; return; }
+      if (!vc || Date.now() - vct > 120) { vc = gen(); vc.r *= 3.2; vc.g *= 3.2; vc.b *= 3.2; vct = Date.now(); }
+      const dx = (x - px) * 9, dy = (y - py) * 9; px = x; py = y; splat(x, y, dx, dy, vc);
+    }
+
+    // real mouse / touch also stirs the ink (window events; canvas sits behind content)
+    const P = { x: 0, y: 0, dx: 0, dy: 0, moved: false, seen: false, c: gen() };
+    const move = (cx, cy, k) => {
+      const r = canvas.getBoundingClientRect(), x = cx - r.left, y = cy - r.top;
+      if (!P.seen) { P.seen = true; P.x = x; P.y = y; return; }
+      P.dx = (x - P.x) * k; P.dy = (y - P.y) * k; P.x = x; P.y = y; P.moved = true; P.c = gen();
+    };
+    addEventListener('mousemove', e => move(e.clientX, e.clientY, 5));
+    addEventListener('touchmove', e => move(e.touches[0].clientX, e.touches[0].clientY, 8), { passive: true });
+    addEventListener('touchstart', e => { const r = canvas.getBoundingClientRect(); P.x = e.touches[0].clientX - r.left; P.y = e.touches[0].clientY - r.top; P.seen = true; }, { passive: true });
+
+    (function loop() {
+      if (canvas.width !== canvas.clientWidth || canvas.height !== canvas.clientHeight) { canvas.width = canvas.clientWidth; canvas.height = canvas.clientHeight; init(); }
+      orbit();
+      if (stack.length) burst(stack.pop());
+      if (P.moved) { splat(P.x, P.y, P.dx, P.dy, P.c); P.moved = false; }
+      step(.016); render(); requestAnimationFrame(loop);
+    })();
+  }
+  try { fluid($('canvas')); } catch (e) { console.warn('Fluid background unavailable', e); }
+})();
+</script>
+
+<script type="module">
+  import Lenis from "lenis";
+  const lenis = new Lenis({ smoothWheel: true });
+  (function raf(t) { lenis.raf(t); requestAnimationFrame(raf); })(0);
+</script>
+</body>
+</html>
