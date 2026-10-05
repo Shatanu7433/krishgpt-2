@@ -40,8 +40,9 @@ except ImportError:
     from krishigpt import ask
 
 key = os.environ.get("GROQ_API_KEY")
-if not key or key.startswith("PASTE"):
-    sys.exit("Open the .env file in this folder, replace PASTE_YOUR_GROQ_KEY_HERE with your real Groq key, save it (Cmd+S), then run again.")
+
+if not key:
+    raise RuntimeError("GROQ_API_KEY environment variable is not configured.")
 
 client = Groq(api_key=key)
 app = Flask(__name__)
