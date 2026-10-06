@@ -3,7 +3,7 @@ KrishiGPT web app: animated landing page + chat.
 The Groq API key stays on this server. It is never sent to the browser.
 
 Files needed in the same folder:
-    krishigpt_server.py   (this file)
+    app.py (this file) 
     index.html
     krishigpt_groq.py     (your Groq agent; if you kept the old name, krishigpt.py also works)
 
@@ -26,13 +26,6 @@ from groq import Groq
 HERE = Path(__file__).parent
 
 # Load GROQ_API_KEY from a local .env file (so no `export` is needed each time).
-env_file = HERE / ".env"
-if env_file.exists():
-    for line in env_file.read_text().splitlines():
-        line = line.strip()
-        if "=" in line and not line.startswith("#"):
-            k, v = line.split("=", 1)
-            os.environ.setdefault(k.strip(), v.strip().strip("\"'"))
 
 try:
     from krishigpt_groq import ask
