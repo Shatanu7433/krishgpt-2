@@ -20,7 +20,7 @@ import sys
 import requests
 from groq import Groq
 
-MODEL = "llama-3.3-70b-versatile"  # tool-capable; fallback: llama-3.1-8b-instant
+MODEL = "openai/gpt-oss-120b"  # tool-capable; fallback: llama-3.1-8b-instant
 MAX_TOOL_ROUNDS = 6
 
 SYSTEM_PROMPT = """You are KrishiGPT, a practical farming assistant for Indian farmers.
